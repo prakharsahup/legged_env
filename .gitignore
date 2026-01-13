@@ -62,3 +62,8 @@ MANIFEST
 
 # outputs
 outputs
+
+# Dependency repositories
+isaacgym/
+IsaacGymEnvs/
+rl_games/
