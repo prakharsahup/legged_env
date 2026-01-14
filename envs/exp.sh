@@ -327,7 +327,7 @@ a1Terrain(){
         checkpoint=assets/checkpoints/A1Terrain.pth
         # task.env.dataPublisher.enable=true
         # ++task.env.urdfAsset.AssetOptions.vhacd_enabled=true
-        task.env.enableDebugVis=Truerun.sh
+        task.env.enableDebugVis=True
         task.env.dataPublisher.enable=true
         num_envs=20
         # task.env.terrain.terrainType=heightfield
@@ -373,8 +373,8 @@ dukehumanoid_stairs(){
     change_hydra_dir
     PLAY_ARGS+=(
         headless=false
-        checkpoint=outputs/Biped/train/legged_stairs/runs/*/nn/BipedAsymm.pth
-        num_envs=20
+        checkpoint=$(get_latest_checkpoint dukehumanoid_stairs)
+        num_envs=1
         task.env.dataPublisher.enable=true
         task.env.learn.episodeLength_s=999
         task.env.terrain.maxInitMapLevel=1
@@ -405,7 +405,7 @@ dukehumanoid_stairs(){
         task.env.learn.guided_contact.phase_freq=1.25
         train.params.config.horizon_length=32
         train.params.config.mini_epochs=8
-        train.params.config.max_epochs=5000
+        train.params.config.max_epochs=100
         train=BipedPPOAsymm
         task.env.asymmetric_observations=True
         task.env.stateNames=[linearVelocity,angularVelocity,projectedGravity,commands,dofPosition,dofVelocity,actions,contactTarget,contact,phase]
@@ -504,8 +504,8 @@ dukehumanoid_rough(){
     change_hydra_dir
     PLAY_ARGS+=(
         headless=false
-        checkpoint=outputs/Biped/train/legged_rough/runs/*/nn/BipedAsymm.pth
-        num_envs=20
+        checkpoint=$(get_latest_checkpoint dukehumanoid_rough)
+        num_envs=1
         task.env.dataPublisher.enable=true
         task.env.learn.episodeLength_s=999
         task.env.terrain.maxInitMapLevel=0
@@ -536,7 +536,7 @@ dukehumanoid_rough(){
         task.env.learn.guided_contact.phase_freq=1.25
         train.params.config.horizon_length=32
         train.params.config.mini_epochs=8
-        train.params.config.max_epochs=5000
+        train.params.config.max_epochs=100
         train=BipedPPOAsymm
         task.env.asymmetric_observations=True
         task.env.stateNames=[linearVelocity,angularVelocity,projectedGravity,commands,dofPosition,dofVelocity,actions,contactTarget,contact,phase]
@@ -636,7 +636,7 @@ base(){
     )
     
     TRAIN_ARGS=(
-        headless=true
+        headless=True
     )
     EXPORT_ARGS=(
         test=export
@@ -652,4 +652,26 @@ change_hydra_dir(){
     BASE_ARGS+=(
         "hydra.run.dir=..//outputs//\$\{task_name\}//\$\{test\}//${FUNCNAME[1]}"
     )
+}
+
+# Helper function to get the latest checkpoint from outputs folder
+# Usage: $(get_latest_checkpoint <experiment_name>)
+get_latest_checkpoint(){
+    local exp_name="${1:-${FUNCNAME[1]}}"
+    # Get the directory where this script is located
+    local script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+    local base_dir="${script_dir}/../outputs/Biped/train/${exp_name}/runs"
+    local latest_checkpoint=""
+    
+    if [ -d "$base_dir" ]; then
+        # Find the most recently modified .pth file
+        latest_checkpoint=$(find "$base_dir" -name "*.pth" -type f -printf '%T@ %p\n' 2>/dev/null | sort -rn | head -1 | cut -d' ' -f2-)
+    fi
+    
+    if [ -n "$latest_checkpoint" ]; then
+        # Quote the path to handle spaces for Hydra
+        echo "'${latest_checkpoint}'"
+    else
+        echo "null"
+    fi
 }
