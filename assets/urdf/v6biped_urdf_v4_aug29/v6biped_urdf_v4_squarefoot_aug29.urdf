@@ -78,36 +78,6 @@
   </collision>
 </link>
 
-<link name="link_04_L_knee_rocker_1">
-  <inertial>
-    <origin xyz="-0.01761954319685695 0.0025763920301442172 -0.028197163363816474" rpy="0 0 0"/>
-    <mass value="0.15488700659123303"/>
-    <inertia ixx="0.00015024114816780502" iyy="0.0002236908852147109" izz="8.077275595596428e-05" ixy="-7.510072938964019e-06" iyz="-1.2018629039793269e-05" ixz="-7.121565568717503e-05"/>
-  </inertial>
-  <visual>
-    <origin xyz="0.003 -0.095774 0.228" rpy="0 0 0"/>
-    <geometry>
-      <mesh filename="meshes/link_04_L_knee_rocker_1.stl" scale="0.001 0.001 0.001"/>
-    </geometry>
-    <material name="silver"/>
-  </visual>
-</link>
-
-<link name="link_05_L_knee_link_1">
-  <inertial>
-    <origin xyz="-0.01531283689309905 0.0 -0.0700003286540784" rpy="0 0 0"/>
-    <mass value="0.21980714584506778"/>
-    <inertia ixx="0.000441907788744339" iyy="0.00045427482803899605" izz="3.542795472807154e-05" ixy="0.0" iyz="8.673617379884035e-19" ixz="-8.673617379884035e-19"/>
-  </inertial>
-  <visual>
-    <origin xyz="0.050693 -0.091074 0.304324" rpy="0 0 0"/>
-    <geometry>
-      <mesh filename="meshes/link_05_L_knee_link_1.stl" scale="0.001 0.001 0.001"/>
-    </geometry>
-    <material name="silver"/>
-  </visual>
-</link>
-
 <link name="link_06_L_ankle_rocker_1">
   <inertial>
     <origin xyz="0.024092446226604218 0.005993892267881898 -0.004248148300943111" rpy="0 0 0"/>
@@ -226,35 +196,6 @@
   </collision>
 </link>
 
-<link name="link_13_R_knee_rocker_1">
-  <inertial>
-    <origin xyz="-0.017619543196855627 -0.0025763920301442172 -0.028197163363816863" rpy="0 0 0"/>
-    <mass value="0.15488700659123308"/>
-    <inertia ixx="0.00015024114816484732" iyy="0.00022369088521269342" izz="8.077275595690494e-05" ixy="7.510072938963586e-06" iyz="1.2018629039793702e-05" ixz="-7.121565568897037e-05"/>
-  </inertial>
-  <visual>
-    <origin xyz="0.003 0.095774 0.228" rpy="0 0 0"/>
-    <geometry>
-      <mesh filename="meshes/link_13_R_knee_rocker_1.stl" scale="0.001 0.001 0.001"/>
-    </geometry>
-    <material name="silver"/>
-  </visual>
-</link>
-
-<link name="link_14_R_knee_link_1">
-  <inertial>
-    <origin xyz="-0.01531283689309905 0.0 -0.0700003286540784" rpy="0 0 0"/>
-    <mass value="0.21980714584506778"/>
-    <inertia ixx="0.000441907788744339" iyy="0.00045427482803899605" izz="3.542795472807154e-05" ixy="0.0" iyz="-8.673617379884035e-19" ixz="-8.673617379884035e-19"/>
-  </inertial>
-  <visual>
-    <origin xyz="0.050693 0.091074 0.304324" rpy="0 0 0"/>
-    <geometry>
-      <mesh filename="meshes/link_14_R_knee_link_1.stl" scale="0.001 0.001 0.001"/>
-    </geometry>
-    <material name="silver"/>
-  </visual>
-</link>
 
 <link name="link_15_R_ankle_rocker_1">
   <inertial>
@@ -347,31 +288,21 @@
   <limit upper="0.628319" lower="-0.628319" effort="81" velocity="13.333"/>
 </joint>
 
-<joint name="joint_04_L_knee_rocker_RIGID" type="fixed">
-  <origin xyz="-0.0302 0.004774 -0.141" rpy="0 0 0"/>
-  <parent link="link_03_L_hip_x_COLLISION_1"/>
-  <child link="link_04_L_knee_rocker_1"/>
-</joint>
-
-<joint name="joint_05_L_knee_link_RIGID" type="fixed">
-  <origin xyz="-0.047693 -0.0047 -0.076324" rpy="0 0 0"/>
-  <parent link="link_04_L_knee_rocker_1"/>
-  <child link="link_05_L_knee_link_1"/>
-</joint>
-
-<joint name="joint_06_L_ankle_rocker_RIGID" type="fixed">
-  <origin xyz="-0.0302 -0.008226 -0.281" rpy="0 0 0"/>
-  <parent link="link_03_L_hip_x_COLLISION_1"/>
-  <child link="link_06_L_ankle_rocker_1"/>
-</joint>
 
 <joint name="joint_07_L_shank_link_main" type="revolute">
   <origin xyz="-0.0302 0.006574 -0.281" rpy="0 0 0"/>
   <parent link="link_03_L_hip_x_COLLISION_1"/>
   <child link="link_07_L_shank_link_main_1"/>
-  <axis xyz="0.0 1.0 0.0"/>
+  <axis xyz="0 1 0"/>
   <limit upper="1.745329" lower="-0.087266" effort="81" velocity="13.333"/>
 </joint>
+
+<joint name="joint_06_L_ankle_rocker_RIGID" type="fixed">
+  <origin xyz="-0.0002 -0.014826 -0.000" rpy="0 0 0"/>
+  <parent link="link_07_L_shank_link_main_1"/>
+  <child link="link_06_L_ankle_rocker_1"/>
+</joint>
+
 
 <joint name="joint_08_L_shank_ankle_link_RIGID" type="fixed">
   <origin xyz="0.041681 -0.0065 -0.113024" rpy="0 0 0"/>
@@ -411,31 +342,20 @@
   <limit upper="0.628319" lower="-0.628319" effort="81" velocity="13.333"/>
 </joint>
 
-<joint name="joint_13_R_knee_rocker_RIGID" type="fixed">
-  <origin xyz="-0.0302 -0.004774 -0.141" rpy="0 0 0"/>
-  <parent link="link_12_R_hip_x_COLLISION_1"/>
-  <child link="link_13_R_knee_rocker_1"/>
-</joint>
-
-<joint name="joint_14_R_knee_link_PASSIVE" type="fixed">
-  <origin xyz="-0.047693 0.0047 -0.076324" rpy="0 0 0"/>
-  <parent link="link_13_R_knee_rocker_1"/>
-  <child link="link_14_R_knee_link_1"/>
-</joint>
-
-<joint name="joint_15_R_ankle_rocker_RIGID" type="fixed">
-  <origin xyz="-0.0302 0.008226 -0.281" rpy="0 0 0"/>
-  <parent link="link_12_R_hip_x_COLLISION_1"/>
-  <child link="link_15_R_ankle_rocker_1"/>
-</joint>
-
 <joint name="joint_16_R_shank_link_main" type="revolute">
   <origin xyz="-0.0302 -0.006574 -0.281" rpy="0 0 0"/>
   <parent link="link_12_R_hip_x_COLLISION_1"/>
   <child link="link_16_R_shank_link_main_1"/>
-  <axis xyz="0.0 -1.0 0.0"/>
+  <axis xyz="0 -1 0"/>
   <limit upper="0.087266" lower="-1.745329" effort="81" velocity="13.333"/>
 </joint>
+
+<joint name="joint_15_R_ankle_rocker_RIGID" type="fixed">
+  <origin xyz="0.0002 0.014226 0.003" rpy="0 0 0"/>
+  <parent link="link_16_R_shank_link_main_1"/>
+  <child link="link_15_R_ankle_rocker_1"/>
+</joint>
+
 
 <joint name="joint_17_R_shank_ankle_link_RIGID" type="fixed">
   <origin xyz="0.041681 0.0065 -0.113024" rpy="0 0 0"/>

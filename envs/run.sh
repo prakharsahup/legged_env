@@ -143,7 +143,7 @@ function run_tasks() {
 
         # Determine the command to run based on conditions
         if [[ "$use_server" == "true" ]]; then
-            cmd="torchrun --standalone --nnodes=1 --nproc_per_node=2 train.py graphics_device_id=-1 headless=true multi_gpu=True $ALL_ARGS"
+            cmd="torchrun --standalone --nnodes=1 --nproc_per_node=2 train.py graphics_device_id=-1 headless=false multi_gpu=True $ALL_ARGS"
         else
             # cmd="$AUSTIN_ARGS python -u $DEBUG $ENTRY_POINT $ALL_ARGS"
             cmd="$AUSTIN_ARGS $(which python) $DEBUG $ENTRY_POINT $ALL_ARGS"

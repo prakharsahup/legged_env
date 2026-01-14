@@ -2,8 +2,8 @@
 # $ conda env create --file conda_env.yaml
 name: py38
 channels:
-  # - pytorch
-  # - nvidia
+  - pytorch
+  - nvidia
   # - open3d-admin
   - conda-forge
   - defaults
@@ -29,10 +29,11 @@ dependencies:
   # - point_cloud_utils
   - pydot
   # - pythonocc-core
-  - nvidia::cudatoolkit=11.3
-  - pytorch::pytorch
-  - pytorch::torchaudio
-  - pytorch::torchvision
+  # - nvidia::cudatoolkit=11.3
+  - pytorch
+  - torchaudio
+  - pytorch-cuda=12.1
+  - torchvision
   - termcolor
   # - rtree=0.9.4
   - scikit-learn
