@@ -1,0 +1,74 @@
+# Training configuration for Diffusion-based Policy
+# Uses terrain-adaptive diffusion model for action generation
+#
+# Architecture (from diagram):
+# - Unified Encoder: 3-layer MLP [256, 18] → State Latent (64D) + Terrain Latent (4D)
+# - Adaptive Diffusion Net: 5-layer MLP [128, 128, 64, 32]
+# - Steps 20-40 adaptive based on terrain difficulty
+
+params:
+  network:
+    name: diffusion_actor_critic
+    separate: True
+    
+    # Diffusion-specific parameters
+    diffusion:
+      state_latent_dim: 64
+      terrain_latent_dim: 4
+      max_diffusion_steps: 40
+      min_diffusion_steps: 20
+      # Encoder: 3-layer MLP [256, 18]
+      encoder_hidden_dims: [256, 18]
+      # Diffusion Net: 5-layer MLP [128, 128, 64, 32]
+      diffusion_hidden_dims: [128, 128, 64, 32]
+
+    space:
+      continuous:
+        mu_activation: None
+        sigma_activation: None
+        mu_init:
+          name: default
+        sigma_init:
+          name: const_initializer
+          val: 0.  # std = 1
+        fixed_sigma: True
+
+    # Critic MLP configuration
+    mlp:
+      units: [512, 256, 128]
+      activation: elu
+      d2rl: False
+      initializer:
+        name: default
+      regularizer:
+        name: None
+
+  config:
+    central_value_config:
+      minibatch_size: ${..minibatch_size}
+      mini_epochs: ${..mini_epochs}
+      learning_rate: ${..learning_rate}
+      lr_schedule: ${..lr_schedule}
+      schedule_type: standard
+      kl_threshold: ${..kl_threshold}
+      clip_value: True
+      normalize_input: True
+      truncate_grads: ${..truncate_grads}
+
+      network:
+        name: actor_critic
+        central_value: True
+        mlp:
+          units: [512, 256, 128]
+          activation: elu
+          d2rl: False
+          initializer:
+            name: default
+          regularizer:
+            name: None
+
+    name: ${resolve_default:BipedDiffusion,${....experiment}}
+
+defaults:
+  - LeggedTerrainPPO
+  - _self_
