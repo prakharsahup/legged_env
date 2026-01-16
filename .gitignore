@@ -1,0 +1,26 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Training outputs (exclude from git)
+legged_env/outputs/
+*.pth
+*.ckpt
+
+# Large binary files
+*.tar.gz
+legged_env/isaacgym/python/isaacgym*.whl
+
+# Logs
+*.log
+
+# Temporary
+*.tmp
+*.bak
+.DS_Store

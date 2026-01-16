@@ -1,0 +1,38 @@
+params:
+  network:
+    name: actor_critic
+    separate: False
+    # rest of the network config is the same as in BipedPPO
+  config:
+    central_value_config:
+      minibatch_size: ${..minibatch_size}
+      mini_epochs: ${..mini_epochs}
+      learning_rate: ${..learning_rate} # 3.e-4
+      lr_schedule: ${..lr_schedule} # adaptive
+      schedule_type: standard
+      kl_threshold: ${..kl_threshold} # 0.008
+      clip_value: True
+      normalize_input: True
+      truncate_grads: ${..truncate_grads}
+
+      network:
+        name: actor_critic
+        central_value: True
+        mlp:
+          units: [1024,512,256] #[512, 256, 128]
+          activation: elu
+          d2rl: False
+          initializer:
+            name: default
+          regularizer:
+            name: None
+
+    # num_actors: ${....task.env.numEnvs} # seems to be not needed
+    name: ${resolve_default:BipedAsymm,${....experiment}}
+    # value_bootstrap: False # doe not seems to help too much
+    # mixed_precision: False
+
+
+defaults:
+  - LeggedTerrainPPO
+  - _self_
