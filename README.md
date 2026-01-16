@@ -1,196 +1,396 @@
-# Isaac Gym RL template environment for legged robots
-This repository contains an Isaac Gym template environment that can be used to train any legged robot using [rl_games](https://github.com/Denys88/rl_games). This repository is deployed with zero-shot sim-to-real transfer in the following projects:
-- [Text2Robot](https://github.com/generalroboticslab/Text2Robot): a framework that converts user text specifications and performance preferences into physical quadrupedal robots.
+# Legged Environment with Diffusion Policy - Complete Guide
 
-  <img src="https://github.com/generalroboticslab/Text2Robot/blob/master/figures/teaser.gif" alt="teaser" style="width:20%; margin: 0;">
-- [DukeHumanoidv1](https://github.com/generalroboticslab/DukeHumanoidv1): an open-source 10-degrees-of-freedom child size humanoid for locomotion research.
+This project implements a bipedal robot locomotion environment using Isaac Gym with a diffusion-based policy architecture for terrain-adaptive control based on the BiRoDiff paper (arXiv:2407.05424).
 
-  <img src="https://github.com/generalroboticslab/dukeHumanoidHardwareControl/blob/master/doc/image/dukehumanoidv1-thumbnails_1.gif" alt="teaser" style="width:20%; margin: 0;">
+## Table of Contents
+- [Requirements](#requirements)
+- [Installation](#installation)
+- [Getting Started](#getting-started)
+- [Training Policies](#training-policies)
+- [Running Policies (Play Mode)](#running-policies-play-mode)
+- [Available Experiments](#available-experiments)
+- [Performance Optimization](#performance-optimization)
+- [Terrain Configuration](#terrain-configuration)
+- [Troubleshooting](#troubleshooting)
 
+## Requirements
 
-<!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
-## Table of content
-- [project structure](#project-structure)
-- [Setting up](#setting-up)
-   * [Tested environment](#tested-environment)
-   * [Setup python virtual environment](#setup-python-virtual-environment)
-   * [Setup vscode](#setup-vscode)
-   * [to start conda env](#to-start-conda-env)
-   * [to train a policy](#to-train-a-policy)
-   * [to run example checkpoint:](#to-run-example-checkpoint)
+### System Requirements
+- **OS:** Ubuntu 22.04 (tested)
+- **GPU:** NVIDIA GPU with CUDA 12.1 or higher
+- **Python:** 3.8
+- **IDE:** Visual Studio Code (recommended)
 
-<!-- TOC end -->
+### Environment Management
+- **Micromamba** (recommended) or Conda
 
-## project structure
-```
-.
-├── assets
-│   ├── checkpoints # saved checkpoint
-│   │   ├── A1Terrain.pth
-│   │   └── ...
-│   ├── joint_monkey.py # script to check the urdf
-│   └── urdf
-│       ├── a1
-│       ├── anymal_c
-│       └──...
-├── envs
-│   ├── cfg # stores all configurations
-│   │   ├── config.yaml
-│   │   ├── pbt
-│   │   ├── task
-│   │   └── train
-│   ├── common # common scripts
-│   │   ├── publisher.py
-│   │   ├── terrain.py
-│   │   └── utils.py
-│   ├── exp.sh # experiment scripts
-│   ├── __init__.py
-│   ├── plot_juggler # plot_juggler configurations
-│   │   └── robotdog7kg_play_debug.xml
-│   ├── run.sh # run script
-│   ├── setup # conda env setup script
-│   │   ├── conda_env.yaml
-│   │   └── ...
-│   ├── tasks # 
-│   │   ├── __init__.py
-│   │   └── legged_terrain.py
-│   └── train.py
-├── outputs # contains trained results
-└── README.md
-```
+## Installation
 
-## Setting up
+### Step 1: Install Micromamba
 
-### Tested environment
-- Operating system: Ubuntu 22.04 with CUDA 12.3
-- Development environment: Visual Studio Code (VSCode)
-- Python environment management: micromanba
-
-### Setup python virtual environment
- first [install Micromamba](https://mamba.readthedocs.io/en/latest/installation/micromamba-installation.html) if you have not done so. Recommended to install at `~/repo/micromamba`
-
+If you haven't installed Micromamba yet:
 
 ```bash
 "${SHELL}" <(curl -L micro.mamba.pm/install.sh)
 ```
 
-Setup a python virtual envirnpoment named  `py38` with conda yaml file `setup/conda_env.yaml` 
+Recommended installation location: `~/repo/micromamba`
+
+### Step 2: Create Python Environment
 
 ```bash
+# Set up alias for convenience
 alias conda="micromamba"
 
-# Create environment
-conda env create --file setup/conda_env_py38.yaml -y
+# Navigate to the project
+cd /path/to/legged_env
+
+# Create environment from YAML file
+conda env create --file envs/setup/conda_env.yaml -y
 
 # Activate the environment
 conda activate py38
 
-# Export library path
+# Export library path (IMPORTANT!)
 export LD_LIBRARY_PATH=${CONDA_PREFIX}/lib
 ```
-Install addional dependencies:
-```bash
-conda activate py38 && export LD_LIBRARY_PATH=${CONDA_PREFIX}/lib
 
-# install Isaacgym
-cd ~/repo
+**Pro Tip:** Add this to your `~/.bashrc` to auto-activate the environment:
+```bash
+alias conda="micromamba"
+alias activate_py38="conda activate py38 && export LD_LIBRARY_PATH=\${CONDA_PREFIX}/lib"
+```
+
+### Step 3: Install Isaac Gym
+
+```bash
+# Create a repo directory
+mkdir -p ~/repo && cd ~/repo
+
+# Clone Isaac Gym (custom fork with fixes)
 git clone https://github.com/boxiXia/isaacgym.git
 cd ~/repo/isaacgym/python
-python -m pip install -e .
 
-## verify
+# Install Isaac Gym
+conda activate py38 && export LD_LIBRARY_PATH=${CONDA_PREFIX}/lib
+python -m pip install -e .
+```
+
+**Verify Installation:**
+```bash
 cd ~/repo/isaacgym/python/examples
 python interop_torch.py
-# if error: crypt.h: No such file or directory, do this:
-# cp /usr/include/crypt.h /home/grl/repo/micromamba/envs/py38/include/python3.8/
+```
 
-# install rl_games
+**If you get "crypt.h: No such file or directory" error:**
+```bash
+cp /usr/include/crypt.h ${CONDA_PREFIX}/include/python3.8/
+```
+
+### Step 4: Install rl_games
+
+```bash
 cd ~/repo
 git clone https://github.com/Denys88/rl_games.git
 cd ~/repo/rl_games/
-# Optionally modify setup.py to remove the version control parts
-python -m pip install -e .
 
-# install IsaacGymEnvs
-# https://github.com/NVIDIA-Omniverse/IsaacGymEnvs/tree/main
+# Optional: Remove version control from setup.py for easier installation
+python -m pip install -e .
+```
+
+### Step 5: Install IsaacGymEnvs
+
+```bash
 cd ~/repo
 git clone https://github.com/NVIDIA-Omniverse/IsaacGymEnvs.git
 cd ~/repo/IsaacGymEnvs
-# recommended to modify setup.py to remove the version control parts
+
+# Optional: Modify setup.py to remove version control
 python -m pip install -e .
-
 ```
 
-### Setup vscode
-Install VSCode: [Download and install](https://code.visualstudio.com/download) vscode if you have not done so
+### Step 6: Verify Installation
 
-Install vscode Extensions:
-- Python: ms-python.python
-Optionally Install other extensions such as Git based on your needs.
+Test that everything is set up correctly:
 
-To configure the project using vscode:
-- Open the project folder.
-- Select the correct Python virtual environment.
-
-
-### to start conda env
-Ensure you're operating within the Python virtual environment.  For convenience, **we'll assume all commands in this guide are executed within this activated environment**:
-```
+```bash
+# Activate environment
 conda activate py38 && export LD_LIBRARY_PATH=${CONDA_PREFIX}/lib
+
+# Navigate to the project
+cd /path/to/legged_env/envs
+
+# Run a dry run (prints command without executing)
+bash run.sh dukehumanoid_baseline -d
 ```
 
-### to train a policy
+## Getting Started
+
+### Always Activate Environment First
+
+Before running any commands, ensure the environment is activated:
+
+```bash
+conda activate py38 && export LD_LIBRARY_PATH=${CONDA_PREFIX}/lib
+cd /path/to/legged_env/envs
+```
+
+## Training Policies
+
+### Basic Training Command
 
 ```bash
 cd envs
+bash run.sh <experiment_name>
+```
 
-# duke humanoid v1 baseline
+### Training Examples
+
+#### 1. Train Diffusion Policy on Rough Terrain
+```bash
+bash run.sh dukehumanoid_diffusion_rough
+```
+- **Duration:** ~5000 epochs
+- **Output:** `outputs/dukehumanoid_diffusion_rough/runs/*/nn/*.pth`
+- **Checkpoints saved every:** 50 epochs
+
+#### 2. Train Diffusion Policy on Stairs
+```bash
+bash run.sh dukehumanoid_diffusion_stairs
+```
+
+#### 3. Train Baseline (Non-Diffusion) Policy
+```bash
 bash run.sh dukehumanoid_baseline
-
-# duke humanoid v1 passive policy
-bash run.sh dukehumanoid_passive
-
-# robot dog7kg
-bash run.sh dog
-
-# a1
-bash run.sh a1Terrain
-
-# anymal
-bash run.sh anymalTerrain
 ```
 
+### Training Tips
 
-### to run example checkpoint:
+- **Monitor training:** Checkpoints are saved in `outputs/<experiment_name>/runs/*/nn/`
+- **Resume training:** Automatically resumes from the latest checkpoint
+- **Early stopping:** Press `Ctrl+C` to stop training gracefully
+- **Tensorboard:** Logs are saved in the same directory as checkpoints
+
+## Running Policies (Play Mode)
+
+### Basic Play Command
 
 ```bash
 cd envs
+bash run.sh <experiment_name> -p
+```
 
-# duke humanoid v1 baseline
+### Play Mode Examples
+
+#### Run Trained Diffusion Policy on Rough Terrain
+```bash
+bash run.sh dukehumanoid_diffusion_rough -p
+```
+
+#### Run with Keyboard Control (WASD)
+```bash
+bash run.sh dukehumanoid_baseline -pk
+```
+- `W` - Forward
+- `A` - Turn left
+- `S` - Backward
+- `D` - Turn right
+
+### Play Mode Options
+
+- `-p` - Play mode (inference)
+- `-pk` - Play mode with keyboard control
+- `-d` - Dry run (print command without executing)
+- `-pd` - Play mode with debugging enabled
+
+## Debugging
+
+### Remote Debugging with VSCode
+
+1. Start debugging session:
+```bash
+bash run.sh dukehumanoid_baseline -pd  # Play mode + debug
+```
+
+2. In VSCode:
+   - Press `Ctrl+Shift+D`
+   - Select "Python Debugger: Remote Attach"
+   - Click "Start Debugging"
+
+## Quick Start
+
+### Training
+```bash
+cd envs
+bash run.sh dukehumanoid_diffusion_rough
+```
+
+### Play Mode (Inference)
+```bash
+cd envs
+bash run.sh dukehumanoid_diffusion_rough -p
+```
+
+## Available Experiments
+
+### Diffusion Policy Experiments
+
+#### 1. **dukehumanoid_diffusion** (Base)
+Training on mixed terrain with diffusion policy architecture.
+```bash
+bash run.sh dukehumanoid_diffusion
+```
+
+#### 2. **dukehumanoid_diffusion_plain**
+Training on flat terrain for baseline performance.
+```bash
+bash run.sh dukehumanoid_diffusion_plain
+bash run.sh dukehumanoid_diffusion_plain -p  # Play mode
+```
+
+#### 3. **dukehumanoid_diffusion_rough**
+Training on rough terrain (slopes, discrete obstacles, stepping stones, gaps).
+- **Terrain:** Trimesh with rough slopes emphasized
+- **Difficulty:** 0.5 (challenging)
+- **No stairs**
+```bash
+bash run.sh dukehumanoid_diffusion_rough
+bash run.sh dukehumanoid_diffusion_rough -p
+```
+
+#### 4. **dukehumanoid_diffusion_stairs**
+Training on staircase terrain (both ascending and descending).
+- **Terrain:** Trimesh stairs
+- **Proportions:** Equal stairs up/down only
+```bash
+bash run.sh dukehumanoid_diffusion_stairs
+bash run.sh dukehumanoid_diffusion_stairs -p
+```
+
+### Baseline Experiments (Non-Diffusion)
+
+#### 5. **dukehumanoid_baseline**
+Standard PPO with asymmetric actor-critic.
+```bash
+bash run.sh dukehumanoid_baseline
 bash run.sh dukehumanoid_baseline -p
-bash run.sh dukehumanoid_baseline -pk # with keyboard wasd
-
-# duke humanoid v1 passive policy
-bash run.sh dukehumanoid_passive -p
-
-# robot dog7kg
-bash run.sh dog -p
-# a1
-bash run.sh a1Terrain -p
-# anymal
-bash run.sh anymalTerrain -p
-
-# dry run (print the command only)
-bash run.sh anymalTerrain -d
 ```
 
-### Debugging
-
-Use `bash run.sh [THE_TASK_TO_RUN] -d` to start a remote attache python debuging using debugpy with vscode, for example
-
-```bash 
-bash run.sh dukehumanoid_baseline -d # train mode + debug
-bash run.sh dukehumanoid_baseline -pd # play mode + debug
-bash run.sh a1Terrain -pkd # play mode + keyboard + debug
+#### 6. **dukehumanoid_rough**
+Non-diffusion policy trained on rough heightfield terrain.
+```bash
+bash run.sh dukehumanoid_rough
+bash run.sh dukehumanoid_rough -p
 ```
-Then go to the vscode debug panel (keyboard shortcut: `ctrl+shift+D`), in the `RUN AND DEBUG`, select option `Python Debugger: Remote Attach` to start debugging.
+
+#### 7. **dukehumanoid_stairs**
+Non-diffusion policy for stairs.
+```bash
+bash run.sh dukehumanoid_stairs
+bash run.sh dukehumanoid_stairs -p
+```
+
+## Performance Optimization Tips
+
+### If you experience low FPS or crashes:
+
+1. **Disable dataPublisher** (already configured in play mode)
+2. **Reduce terrain complexity:**
+   - `numLevels`: Reduce from 8 to 2-3
+   - `numTerrains`: Reduce from 10 to 2-3
+3. **Reduce number of environments:**
+   - Set `num_envs=1` in play mode
+4. **Lower render FPS:**
+   - Current: `renderFPS=50`
+   - Can reduce to 30 if needed
+
+### Current Optimized Settings (Play Mode)
+- `num_envs=1` - Single environment for stability
+- `dataPublisher.enable=false` - Prevents crashes
+- `renderFPS=50` - Smooth visualization
+- Small terrain grids for better performance
+
+## Terrain Types
+
+### Trimesh Terrain
+Used for: Stairs, complex obstacles
+- Generates mesh-based terrain with precise geometry
+- Better for stairs and discrete obstacles
+- More computationally expensive
+
+### Heightfield Terrain  
+Used for: Smooth slopes, rough terrain
+- Generates height-based terrain
+- Faster rendering
+- Better for continuous surfaces
+
+## Terrain Proportions
+Format: `[smooth_slope, rough_slope, stairs_up, stairs_down, discrete, stepping_stones, gaps, pit, flat]`
+
+Examples:
+- **Rough terrain (no stairs):** `[0,2,0,0,1,1,1,0,0]`
+- **Stairs only:** `[0,0,1,1,0,0,0,0,0]`
+- **Mixed:** `[1,1,2,1,1,1,1,2,0]`
+
+## Checkpoints
+
+Checkpoints are automatically loaded from:
+```
+outputs/{experiment_name}/runs/*/nn/*.pth
+```
+
+The `get_latest_checkpoint` function finds the most recent checkpoint for each experiment.
+
+## Troubleshooting
+
+### Issue: "checkpoint=null" or no checkpoint found
+**Solution:** Train the experiment first before running play mode.
+
+### Issue: Crashes with "terminate called without an active exception"
+**Solution:** 
+- Disable dataPublisher: `task.env.dataPublisher.enable=false`
+- Reduce num_envs to 1
+
+### Issue: Low FPS / visual lag
+**Solution:**
+- Check `renderFPS` setting (should be 50-60)
+- Reduce `numTerrains` and `numLevels`
+- Set `num_envs=1`
+
+### Issue: Terrain looks wrong (rough instead of stairs, etc.)
+**Solution:**
+- Check `PLAY_ARGS` vs `BASE_ARGS` in `exp.sh`
+- Ensure terrain proportions match desired terrain type
+- Verify `terrainType` is set correctly (trimesh vs heightfield)
+
+## Architecture Overview
+
+The diffusion policy uses:
+- **Unified Encoder:** Processes observations into state (64D) and terrain (4D) latents
+- **Terrain Noise Predictor:** Estimates terrain difficulty
+- **Adaptive Diffusion Net:** Generates actions via iterative denoising
+  - Adapts diffusion steps based on terrain difficulty (20-40 steps)
+  - Uses time embeddings and terrain-conditioned denoising
+
+## Key Configuration Files
+
+- `envs/exp.sh` - Experiment definitions and configurations
+- `envs/run.sh` - Main entry point script
+- `envs/cfg/config.yaml` - Base configuration
+- `envs/cfg/train/BipedPPODiffusion.yaml` - Diffusion policy training config
+
+## Training Parameters
+
+### Diffusion Experiments
+- **Max epochs:** 5000
+- **Horizon length:** 32
+- **Mini epochs:** 8
+- **Learning rate:** 0.0003 (adaptive)
+- **Architecture:** 
+  - Actor: Diffusion policy (64D state + 4D terrain latents)
+  - Critic: MLP [512, 256, 128]
+
+## References
+
+- **Paper:** BiRoDiff - Bidirectional Robotic Diffusion Policy (arXiv:2407.05424)
+- **Framework:** Isaac Gym, rl_games (PPO)
